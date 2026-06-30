@@ -36,7 +36,7 @@ def detect_morse(text):
         return False
     return True
 
-def datect_binary(text):
+def detect_binary(text):
     for char in text:
         if char == "0" or char == "1" or char == " ":
             continue
@@ -66,10 +66,16 @@ if __name__ == "__main__":
             print("[+] Result: The text appears to be Base64.")
         elif detect_hex(user_text):
             print("[+] Result: The text appears to be Hexadecimal.")
+        elif detect_binary(user_text):
+            print("[+] Result: The text appears to be Binary.")
         elif detect_rot13(user_text):
             print("[+] Result: The text appears to be ROT13.")
         elif detect_morse(user_text):
             print("[+] Result: The text appears to be Morse code.")
+        elif detect_ascii(user_text):
+            print("[+] Result: The text appears to be ASCII.")
+        elif detect_binary(user_text):
+            print("[+] Result: The text appears to be binary.")
         else:
             print("[-] Result: Unknown format.")
             
