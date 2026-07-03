@@ -1,33 +1,45 @@
 import base64
+from dataclasses import dataclass
 import string
 import re
 
-rotation_position = 0
+STARTUP_MESSAGE = "CTF Assistant started."
+EXIT_HINT_MESSAGE = "Type 'exit' to close the program."
+PROMPT_MESSAGE = "Enter the text to analyze: "
+EXIT_MESSAGE = "Closing the assistant..."
+SEPARATOR_MESSAGE = "-" * 40
 
-def detect_base64(text: str) -> bool:
+
+@dataclass(frozen=True)
+class DetectionResult:
+    matched: bool
+    label: str
+    details: str = ""
+
+def detect_base64(text: str) -> DetectionResult:
     text = text.strip() # Remove leading/trailing whitespace
     
     # Base64 only uses A-Z, a-z, 0-9, +, /, and = for padding
     if not re.fullmatch(r'[A-Za-z0-9+/]*={0,2}', text):
-        return False
+        return DetectionResult(False, "Base64")
     
     # The length must be a multiple of 4
     if len(text) % 4 != 0 or len(text) == 0:
-        return False
+        return DetectionResult(False, "Base64")
     
     try:
         # Decode and re-encode to validate the format
         decoded = base64.b64decode(text, validate=True)
-        return base64.b64encode(decoded).decode() == text
+        return DetectionResult(base64.b64encode(decoded).decode() == text, "Base64")
     except Exception:
-        return False
+        return DetectionResult(False, "Base64")
 
-def detect_hex(text) -> bool:
+def detect_hex(text: str) -> DetectionResult:
     text = text.strip()  # Remove leading/trailing whitespace
 
     # Hexadecimal can optionally start with '0x' or '#', followed by hex digits
     if not re.fullmatch(r'^(0x|#)?[0-9a-fA-F]+$', text):
-        return False
+        return DetectionResult(False, "Hexadecimal")
     
     if text.startswith("0x"):
         text = text[2:]  # Remove the "0x" prefix
@@ -35,46 +47,46 @@ def detect_hex(text) -> bool:
         text = text[1:]  # Remove the leading "#"
 
     try:
-        bytes.fromhex(text, validate=True)  # Validate hex string
-        return True
+        bytes.fromhex(text)  # Validate hex string
+        return DetectionResult(True, "Hexadecimal")
     except ValueError:
-        return False
+        return DetectionResult(False, "Hexadecimal")
 
-def detect_ascii(text):
+def detect_ascii(text: str) -> DetectionResult:
     text = text.strip()  # Remove leading/trailing whitespace
 
     try:
         text.encode('ascii')
-        return True
+        return DetectionResult(True, "ASCII")
     except UnicodeEncodeError:
-        return False
+        return DetectionResult(False, "ASCII")
 
-def detect_cesar(text):
-    global rotation_position
+def detect_caesar(text: str) -> DetectionResult:
 
-    common_words_en = [
-    "the", "is", "and", "you", "this", "that", "with", "for",
-    "are", "was", "have", "hello", "world", "what", "flag",
-    "to", "of", "in", "it", "not", "on", "be", "as", "at"
-]
-    common_words_es = [
-    "el", "la", "los", "las", "un", "una", "unos", "unas", "este", "esta", "eso",
-    "yo", "tu", "el", "ella", "nosotros", "ellos", "que", "su", "sus", "me", "te", "se",
-    "de", "en", "con", "por", "para", "sin", "sobre", "entre", "hasta", "desde",
-    "y", "o", "pero", "porque", "si", "no", "como", "cuando", "donde",
-    "es", "son", "esta", "estan", "hay", "ser", "estar", "tener", "hacer",
-    "puede", "puedes", "quiero", "vamos", "fue", "era",
-    "flag", "bandera", "contrasena", "clave", "hola", "mundo", "secreto",
-    "mensaje", "texto", "codigo", "encontrar", "buscar"
-]
+    common_english_words = [
+        "the", "is", "and", "you", "this", "that", "with", "for",
+        "are", "was", "have", "hello", "world", "what", "flag",
+        "to", "of", "in", "it", "not", "on", "be", "as", "at",
+        "word", "text", "code", "cipher", "secret",
+    ]
+    common_spanish_words = [
+        "el", "la", "los", "las", "un", "una", "unos", "unas", "este", "esta", "eso",
+        "yo", "tu", "el", "ella", "nosotros", "ellos", "que", "su", "sus", "me", "te", "se",
+        "de", "en", "con", "por", "para", "sin", "sobre", "entre", "hasta", "desde",
+        "y", "o", "pero", "porque", "si", "no", "como", "cuando", "donde",
+        "es", "son", "esta", "estan", "hay", "ser", "estar", "tener", "hacer",
+        "puede", "puedes", "quiero", "vamos", "fue", "era",
+        "flag", "bandera", "contrasena", "clave", "hola", "mundo", "secreto",
+        "mensaje", "texto", "codigo", "encontrar", "buscar",
+    ]
 
     for char in text:
         if char in string.ascii_lowercase or char in string.ascii_uppercase or char == " ":
             continue
-        return False
+        return DetectionResult(False, "Caesar cipher")
     
     relevant_positions = 0
-    rotation_position = 0
+    best_shift = 0
     for i in range(1, 26): # Shift values from 1 to 25
         cont = 0
         decrypted_text = ""
@@ -90,43 +102,43 @@ def detect_cesar(text):
         split_text = decrypted_text.split()
 
         for word in split_text:
-            if word.lower() in common_words_en or word.lower() in common_words_es:
+            if word.lower() in common_english_words or word.lower() in common_spanish_words:
                 cont += 1
         
         if cont > relevant_positions:
             relevant_positions = cont
-            rotation_position = i
-            
-    if relevant_positions > 1:
-        return True
-    return False
+            best_shift = i
 
-def detect_morse(text):
+    if relevant_positions >= 1:
+        return DetectionResult(True, "Caesar cipher", f"rotated {best_shift} positions")
+    return DetectionResult(False, "Caesar cipher")
+
+def detect_morse(text: str) -> DetectionResult:
     for char in text:
         if char == "." or char == "-" or char == " ":
             continue
-        return False
-    return True
+        return DetectionResult(False, "Morse code")
+    return DetectionResult(True, "Morse code")
 
-def detect_binary(text):
+def detect_binary(text: str) -> DetectionResult:
     for char in text:
         if char == "0" or char == "1" or char == " ":
             continue
-        return False
-    return True
+        return DetectionResult(False, "binary")
+    return DetectionResult(True, "binary")
 
 if __name__ == "__main__":
-    print("=== CTF Assistant Started ===")
-    print("Type 'exit' to close the program.\n")
+    print(STARTUP_MESSAGE)
+    print(EXIT_HINT_MESSAGE + "\n")
 
     # Infinite loop to keep prompting for text until you type exit
     while True:
         # input() pauses the program and waits for the user to type and press Enter
-        user_text = input("Enter the CTF text: ")
+        user_text = input(PROMPT_MESSAGE)
 
         # Exit condition
         if user_text.lower() == "exit":
-            print("Closing the assistant...")
+            print(EXIT_MESSAGE)
             break
         
         # Skip empty input if you press Enter by accident
@@ -134,22 +146,22 @@ if __name__ == "__main__":
             continue
 
         # Run the text through our detectors
-        if detect_binary(user_text):
-            print("[+] Result: The text appears to be Binary.")
-        elif detect_morse(user_text):
-            print("[+] Result: The text appears to be Morse code.")
-        elif detect_hex(user_text):
-            print("[+] Result: The text appears to be Hexadecimal.")
-        elif detect_base64(user_text):
-            print("[+] Result: The text appears to be Base64.")
-        elif detect_cesar(user_text):
-            print(f"[+] Result: The text appears to be Caesar cipher and is likely rotated {rotation_position} positions.")
-        elif detect_ascii(user_text):
-            print("[+] Result: The text appears to be ASCII.")
+        if (binary_result := detect_binary(user_text)).matched:
+            print(f"[Result] The text appears to be {binary_result.label}.")
+        elif (morse_result := detect_morse(user_text)).matched:
+            print(f"[Result] The text appears to be {morse_result.label}.")
+        elif (hex_result := detect_hex(user_text)).matched:
+            print(f"[Result] The text appears to be {hex_result.label}.")
+        elif (base64_result := detect_base64(user_text)).matched:
+            print(f"[Result] The text appears to be {base64_result.label}.")
+        elif (caesar_result := detect_caesar(user_text)).matched:
+            print(f"[Result] The text appears to be {caesar_result.label} and is likely {caesar_result.details}.")
+        elif (ascii_result := detect_ascii(user_text)).matched:
+            print(f"[Result] The text appears to be {ascii_result.label}.")
         else:
-            print("[-] Result: Unknown format.")
+            print("[Result] Unknown format.")
 
-        print("-" * 40)  # Visual separator for the next attempt
-        print()  # Print a blank line for better readability
+        print(SEPARATOR_MESSAGE)
+        print()
             
 
