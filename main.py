@@ -52,15 +52,6 @@ def detect_hex(text: str) -> DetectionResult:
     except ValueError:
         return DetectionResult(False, "Hexadecimal")
 
-def detect_ascii(text: str) -> DetectionResult:
-    text = text.strip()  # Remove leading/trailing whitespace
-
-    try:
-        text.encode('ascii')
-        return DetectionResult(True, "ASCII")
-    except UnicodeEncodeError:
-        return DetectionResult(False, "ASCII")
-
 def detect_caesar(text: str) -> DetectionResult:
 
     common_english_words = [
@@ -113,19 +104,31 @@ def detect_caesar(text: str) -> DetectionResult:
         return DetectionResult(True, "Caesar cipher", f"rotated {best_shift} positions")
     return DetectionResult(False, "Caesar cipher")
 
-def detect_morse(text: str) -> DetectionResult:
-    for char in text:
-        if char == "." or char == "-" or char == " ":
-            continue
-        return DetectionResult(False, "Morse code")
-    return DetectionResult(True, "Morse code")
-
 def detect_binary(text: str) -> DetectionResult:
+    text = text.strip()
+
     for char in text:
         if char == "0" or char == "1" or char == " ":
             continue
         return DetectionResult(False, "binary")
-    return DetectionResult(True, "binary")
+
+    bits = text.replace(" ", "")
+    if len(bits) < 8 or len(bits) % 8 != 0:
+        return DetectionResult(False, "binary")
+
+    try:
+        decoded_bytes = bytes(
+            int(bits[index:index + 8], 2)
+            for index in range(0, len(bits), 8)
+        )
+        decoded_text = decoded_bytes.decode("utf-8")
+    except (ValueError, UnicodeDecodeError):
+        return DetectionResult(False, "binary")
+
+    if not decoded_text.isprintable():
+        return DetectionResult(False, "binary")
+
+    return DetectionResult(True, "binary", f"decodes to {decoded_text!r}")
 
 if __name__ == "__main__":
     print(STARTUP_MESSAGE)
@@ -147,17 +150,13 @@ if __name__ == "__main__":
 
         # Run the text through our detectors
         if (binary_result := detect_binary(user_text)).matched:
-            print(f"[Result] The text appears to be {binary_result.label}.")
-        elif (morse_result := detect_morse(user_text)).matched:
-            print(f"[Result] The text appears to be {morse_result.label}.")
+            print(f"[Result] The text appears to be {binary_result.label} and {binary_result.details}.")
         elif (hex_result := detect_hex(user_text)).matched:
             print(f"[Result] The text appears to be {hex_result.label}.")
         elif (base64_result := detect_base64(user_text)).matched:
             print(f"[Result] The text appears to be {base64_result.label}.")
         elif (caesar_result := detect_caesar(user_text)).matched:
             print(f"[Result] The text appears to be {caesar_result.label} and is likely {caesar_result.details}.")
-        elif (ascii_result := detect_ascii(user_text)).matched:
-            print(f"[Result] The text appears to be {ascii_result.label}.")
         else:
             print("[Result] Unknown format.")
 
