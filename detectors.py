@@ -128,3 +128,19 @@ def detect_binary(text: str) -> DetectionResult:
         return DetectionResult(False, "binary")
 
     return DetectionResult(True, "binary", f"decodes to {decoded_text!r}")
+
+def identify_hash(text: str) -> DetectionResult:
+    text = text.strip()
+    hex_result = detect_hex(text)
+    if not hex_result.matched:
+        return DetectionResult(False, "Hash")
+
+    length = len(text)
+    if length == 32:
+        return DetectionResult(True, "MD5 hash")
+    elif length == 40:
+        return DetectionResult(True, "SHA-1 hash")
+    elif length == 64:
+        return DetectionResult(True, "SHA-256 hash")
+
+    return DetectionResult(False, "Hash")

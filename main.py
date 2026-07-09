@@ -3,6 +3,7 @@ from detectors import (
     detect_binary,
     detect_caesar,
     detect_hex,
+    identify_hash,
 )
 
 STARTUP_MESSAGE = "CTF Assistant started."
@@ -15,6 +16,9 @@ SEPARATOR_MESSAGE = "-" * 40
 def analyze_text(text: str) -> str:
     if (binary_result := detect_binary(text)).matched:
         return f"[Result] The text appears to be {binary_result.label} and {binary_result.details}."
+
+    if (hash_result := identify_hash(text)).matched:
+        return f"[Result] The text appears to be {hash_result.label}."
 
     if (hex_result := detect_hex(text)).matched:
         return f"[Result] The text appears to be {hex_result.label}."
