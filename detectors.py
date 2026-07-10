@@ -13,6 +13,15 @@ class DetectionResult:
     details: str = ""
 
 
+@dataclass(frozen=True)
+class HashDetectionResult:
+    matched: bool
+    label: str
+    algorithm: str = ""
+    length: int = 0
+    details: str = ""
+
+
 COMMON_ENGLISH_WORDS = frozenset(
     {
         "the", "is", "and", "you", "this", "that", "with", "for",
@@ -129,18 +138,18 @@ def detect_binary(text: str) -> DetectionResult:
 
     return DetectionResult(True, "binary", f"decodes to {decoded_text!r}")
 
-def identify_hash(text: str) -> DetectionResult:
+def identify_hash(text: str) -> HashDetectionResult:
     text = text.strip()
     hex_result = detect_hex(text)
     if not hex_result.matched:
-        return DetectionResult(False, "Hash")
+        return HashDetectionResult(False, "Hash")
 
     length = len(text)
     if length == 32:
-        return DetectionResult(True, "MD5 hash")
+        return HashDetectionResult(True, "MD5 hash", "md5", length)
     elif length == 40:
-        return DetectionResult(True, "SHA-1 hash")
+        return HashDetectionResult(True, "SHA-1 hash", "sha1", length)
     elif length == 64:
-        return DetectionResult(True, "SHA-256 hash")
+        return HashDetectionResult(True, "SHA-256 hash", "sha256", length)
 
-    return DetectionResult(False, "Hash")
+    return HashDetectionResult(False, "Hash", length=length)
