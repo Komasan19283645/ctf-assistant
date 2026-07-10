@@ -27,6 +27,39 @@ class PasswordCracker:
             for word in txt:
                 yield word.strip()
 
+    def mutate(self, word: str) -> Iterable[str]:
+        numeric_suffixes = ("1", "12", "123", "1234", "12345", "01", "007", "69", "00", "11", "22", "99")
+        year_suffixes = tuple(str(year) for year in range(1980, 2026))
+        symbol_suffixes = ("!", "@", "#", "$", "*", ".")
+
+        variants = (word, word.lower(), word.upper(), word.capitalize())
+        seen: set[str] = set()
+
+        #Falta bucle para las bases
+
+        for base in variants:
+            if base not in seen:
+                seen.add(base)
+                yield base
+
+        for suffix in numeric_suffixes:
+            candidate = f"{base}{suffix}"
+            if candidate not in seen:
+                seen.add(candidate)
+                yield candidate
+
+        for suffix in year_suffixes:
+            candidate = f"{base}{suffix}"
+            if candidate not in seen:
+                seen.add(candidate)
+                yield candidate
+
+        for suffix in symbol_suffixes:
+            candidate = f"{base}{suffix}"
+            if candidate not in seen:
+                seen.add(candidate)
+                yield candidate
+
     def crack_hash(self, target_hash, algorythm: str) -> HashCrackResult:
         if algorythm == "md5":
             for word in self.iter_candidates():
