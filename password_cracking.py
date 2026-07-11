@@ -35,48 +35,46 @@ class PasswordCracker:
         variants = (word, word.lower(), word.upper(), word.capitalize())
         seen: set[str] = set()
 
-        #Falta bucle para las bases
-
         for base in variants:
             if base not in seen:
                 seen.add(base)
                 yield base
 
-        for suffix in numeric_suffixes:
-            candidate = f"{base}{suffix}"
-            if candidate not in seen:
-                seen.add(candidate)
-                yield candidate
+            for suffix in numeric_suffixes:
+                candidate = f"{base}{suffix}"
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
 
-        for suffix in year_suffixes:
-            candidate = f"{base}{suffix}"
-            if candidate not in seen:
-                seen.add(candidate)
-                yield candidate
+            for suffix in year_suffixes:
+                candidate = f"{base}{suffix}"
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
 
-        for suffix in symbol_suffixes:
-            candidate = f"{base}{suffix}"
-            if candidate not in seen:
-                seen.add(candidate)
-                yield candidate
+            for suffix in symbol_suffixes:
+                candidate = f"{base}{suffix}"
+                if candidate not in seen:
+                    seen.add(candidate)
+                    yield candidate
 
     def crack_hash(self, target_hash, algorythm: str) -> HashCrackResult:
-        if algorythm == "md5":
-            for word in self.iter_candidates():
-                hashed_word = md5(word.encode()).hexdigest()
-                if hashed_word == target_hash:
-                    return HashCrackResult(True, "MD5 hash", word, "md5")
 
-        if algorythm == "sha1":
-            for word in self.iter_candidates():
-                hashed_word = sha1(word.encode()).hexdigest()
-                if hashed_word == target_hash:
-                    return HashCrackResult(True, "SHA-1 hash", word, "sha1")
+        hashers = {
+            "md5": (md5, "MD5 hash"),
+            "sha1": (sha1, "SHA-1 hash"),
+            "sha256": (sha256, "SHA-256 hash"),
+        }
 
-        if algorythm == "sha256":
-            for word in self.iter_candidates():
-                hashed_word = sha256(word.encode()).hexdigest()
-                if hashed_word == target_hash:
-                    return HashCrackResult(True, "SHA-256 hash", word, "sha256")
+        if algorythm not in hashers:
+            return HashCrackResult(False, "Hash", algorithm=algorythm, details="No match found.")
 
+        hasher, label = hashers[algorythm]
+
+        for word in self.iter_candidates():
+                for iter_word in self.mutate(word):
+                    hashed_iter_word = hasher(iter_word.encode()).hexdigest()
+                    if hashed_iter_word == target_hash:
+                        return HashCrackResult(True, label, iter_word, algorythm)
+                    
         return HashCrackResult(False, "Hash", algorithm=algorythm, details="No match found.")
