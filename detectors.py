@@ -87,7 +87,7 @@ def detect_caesar(text: str) -> DetectionResult:
 
     relevant_positions = 0
     best_shift = 0
-    for shift in range(1, 26):
+    for shift in range(0, 26):
         matches = 0
         decrypted_text = ""
 
@@ -107,7 +107,7 @@ def detect_caesar(text: str) -> DetectionResult:
             relevant_positions = matches
             best_shift = shift
 
-    if relevant_positions >= 1:
+    if relevant_positions >= 1 and best_shift > 0:
         return DetectionResult(True, "Caesar cipher", f"rotated {best_shift} positions")
     return DetectionResult(False, "Caesar cipher")
 
@@ -126,11 +126,13 @@ def detect_binary(text: str) -> DetectionResult:
 
     try:
         decoded_bytes = bytes(
-            int(bits[index:index + 8], 2)
-            for index in range(0, len(bits), 8)
+            int(bits[index:index + 8], 2) for index in range(0, len(bits), 8)
         )
-        decoded_text = decoded_bytes.decode("utf-8")
-    except (ValueError, UnicodeDecodeError):
+        try:
+            decoded_text = decoded_bytes.decode("utf-8")
+        except UnicodeDecodeError:
+            return DetectionResult(False, "binary")
+    except ValueError:
         return DetectionResult(False, "binary")
 
     if not decoded_text.isprintable():

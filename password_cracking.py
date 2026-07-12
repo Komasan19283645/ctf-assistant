@@ -58,7 +58,7 @@ class PasswordCracker:
                     seen.add(candidate)
                     yield candidate
 
-    def crack_hash(self, target_hash, algorythm: str) -> HashCrackResult:
+    def crack_hash(self, target_hash, algorithm: str) -> HashCrackResult:
 
         hashers = {
             "md5": (md5, "MD5 hash"),
@@ -66,15 +66,15 @@ class PasswordCracker:
             "sha256": (sha256, "SHA-256 hash"),
         }
 
-        if algorythm not in hashers:
-            return HashCrackResult(False, "Hash", algorithm=algorythm, details="No match found.")
+        if algorithm not in hashers:
+            return HashCrackResult(False, "Hash", algorithm=algorithm, details="No match found.")
 
-        hasher, label = hashers[algorythm]
+        hasher, label = hashers[algorithm]
 
         for word in self.iter_candidates():
                 for iter_word in self.mutate(word):
                     hashed_iter_word = hasher(iter_word.encode()).hexdigest()
                     if hashed_iter_word == target_hash:
-                        return HashCrackResult(True, label, iter_word, algorythm)
+                        return HashCrackResult(True, label, iter_word, algorithm)
                     
-        return HashCrackResult(False, "Hash", algorithm=algorythm, details="No match found.")
+        return HashCrackResult(False, "Hash", algorithm=algorithm, details="No match found.")
