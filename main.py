@@ -2,9 +2,11 @@ from pathlib import Path
 
 from detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
 from password_cracking import PasswordCracker
+from config import WORDLIST_RUTE
+from ai_client import analyze_challenge
 
 STARTUP_MESSAGE  = "CTF Assistant started."
-EXIT_HINT        = "Type 'exit' to quit."
+EXIT_HINT        = "Type 'exit' to quit. Type 'ai' for challenge analysis."
 SEPARATOR        = "-" * 40
 EXIT_MESSAGE     = "Closing the assistant..."
 
@@ -36,11 +38,13 @@ def analyze_text(text: str) -> str:
 
 
 def prompt_wordlist(cracker: PasswordCracker) -> bool:
-    raw = safe_input("Wordlist path: ")
+    raw = safe_input("Wordlist path [Defoult]: ")
     if raw is None:
         return False
 
-    path = Path(raw.strip().strip('"'))
+    path_str = raw.strip().strip('"') or WORDLIST_RUTE
+    path = Path(path_str)
+    
     if not path.is_file():
         print("[Wordlist] File not found.")
         return False
@@ -83,6 +87,35 @@ def handle_hash(cracker: PasswordCracker, text: str) -> bool:
     return True
 
 
+def handle_ai() -> None:
+    print("[AI] Enter challenge description (Type 'END' on a new line to submit):")
+    lines = []
+    while True:
+        line = safe_input("> ")
+        if line is None: 
+            return
+        if line.strip() == "END":
+            break
+        lines.append(line)
+
+    description = "\n".join(lines).strip()
+    if not description:
+        print("[AI] Empty description, aborting.")
+        return
+
+    backend = safe_input("Backend (local/cloud) [local]: ")
+    if backend is None:
+        return
+    backend = backend.strip().lower() or "local"
+
+    print(f"[AI] Analyzing with {backend} model...")
+    try:
+        response = analyze_challenge(description, backend)
+        print("\n--- AI Analysis ---\n" + response + "\n-------------------")
+    except Exception as e:
+        print(f"[AI Error] Failed to reach API: {e}")
+
+
 def main() -> None:
     print(STARTUP_MESSAGE)
     print(EXIT_HINT + "\n")
@@ -90,7 +123,7 @@ def main() -> None:
     cracker = PasswordCracker()
 
     while True:
-        raw = safe_input("Enter text to analyze (or 'exit'): ")
+        raw = safe_input("Enter text to analyze (or 'exit' / 'ai'): ")
         if raw is None:
             break
 
@@ -99,6 +132,11 @@ def main() -> None:
         if text.lower() == "exit":
             print(EXIT_MESSAGE)
             break
+            
+        if text.lower() == "ai":
+            handle_ai()
+            print(SEPARATOR)
+            continue
 
         if not text:
             continue
