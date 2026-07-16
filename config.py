@@ -1,6 +1,6 @@
 import os
 
-WORDLIST_RUTE = r"C:\Users\Miguel\Documents\Code\Wordlist\rockyou.txt\rockyou.txt"
+WORDLIST_ROUTE = r"C:\Users\Miguel\Documents\Code\Wordlist\rockyou.txt\rockyou.txt"
 
 LMSTUDIO_BASE_URL  = "http://localhost:1234/v1"
 LMSTUDIO_MODEL     = "local-model"
