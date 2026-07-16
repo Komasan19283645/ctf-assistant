@@ -1,14 +1,23 @@
+import argparse
+import sys
 from pathlib import Path
 
 from detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
 from password_cracking import PasswordCracker
 from config import WORDLIST_RUTE
 from ai_client import analyze_challenge
+from file_use import read_file_input
 
 STARTUP_MESSAGE  = "CTF Assistant started."
 EXIT_HINT        = "Type 'exit' to quit. Type 'ai' for challenge analysis."
 SEPARATOR        = "-" * 40
 EXIT_MESSAGE     = "Closing the assistant..."
+
+
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="CTF Assistant")
+    parser.add_argument("-f", "--file", help="Path to a text file to analyze")
+    return parser.parse_args()
 
 
 def safe_input(prompt: str) -> str | None:
@@ -117,6 +126,17 @@ def handle_ai() -> None:
 
 
 def main() -> None:
+    args = parse_args()
+
+    if args.file:
+        result = read_file_input(args.file)
+        if not result.success:
+            print(f"Error: {result.error}", file=sys.stderr)
+            sys.exit(1)
+
+        print(analyze_text(result.content))
+        return
+
     print(STARTUP_MESSAGE)
     print(EXIT_HINT + "\n")
 
