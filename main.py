@@ -4,14 +4,14 @@ from pathlib import Path
 
 from detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
 from password_cracking import PasswordCracker
-from config import WORDLIST_RUTE
+from config import WORDLIST_PATH
 from ai_client import analyze_challenge
 from file_use import read_file_input
 
-STARTUP_MESSAGE  = "CTF Assistant started."
-EXIT_HINT        = "Type 'exit' to quit. Type 'ai' for challenge analysis."
-SEPARATOR        = "-" * 40
-EXIT_MESSAGE     = "Closing the assistant..."
+STARTUP_MESSAGE = "CTF Assistant started."
+EXIT_HINT       = "Type 'exit' to quit. Type 'ai' for challenge analysis."
+SEPARATOR       = "-" * 40
+EXIT_MESSAGE    = "Closing the assistant..."
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,13 +47,13 @@ def analyze_text(text: str) -> str:
 
 
 def prompt_wordlist(cracker: PasswordCracker) -> bool:
-    raw = safe_input("Wordlist path [Defoult]: ")
+    raw = safe_input("Wordlist path [Default]: ")
     if raw is None:
         return False
 
-    path_str = raw.strip().strip('"') or WORDLIST_RUTE
+    path_str = raw.strip().strip('"') or WORDLIST_PATH
     path = Path(path_str)
-    
+
     if not path.is_file():
         print("[Wordlist] File not found.")
         return False
@@ -70,7 +70,7 @@ def ensure_wordlist(cracker: PasswordCracker) -> bool:
     return prompt_wordlist(cracker)
 
 
-def crack_hash(cracker: PasswordCracker, target_hash: str, algorithm: str) -> None:
+def execute_crack(cracker: PasswordCracker, target_hash: str, algorithm: str) -> None:
     result = cracker.crack_hash(target_hash, algorithm)
     if result.matched:
         print(f"[Crack] Match found: {result.password} ({result.label})")
@@ -92,7 +92,7 @@ def handle_hash(cracker: PasswordCracker, text: str) -> bool:
     if not ensure_wordlist(cracker):
         return True
 
-    crack_hash(cracker, text.strip(), hash_result.algorithm)
+    execute_crack(cracker, text.strip(), hash_result.algorithm)
     return True
 
 
@@ -101,7 +101,7 @@ def handle_ai() -> None:
     lines = []
     while True:
         line = safe_input("> ")
-        if line is None: 
+        if line is None:
             return
         if line.strip() == "END":
             break
@@ -152,7 +152,7 @@ def main() -> None:
         if text.lower() == "exit":
             print(EXIT_MESSAGE)
             break
-            
+
         if text.lower() == "ai":
             handle_ai()
             print(SEPARATOR)
