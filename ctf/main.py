@@ -5,11 +5,11 @@ from pathlib import Path
 from rich.console import Console
 from rich.rule import Rule
 
-from detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
-from password_cracking import PasswordCracker
-from config import WORDLIST_PATH
-from ai_client import analyze_challenge
-from file_use import read_file_input
+from .detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
+from .password_cracking import PasswordCracker
+from .config import WORDLIST_PATH
+from .ai_client import analyze_challenge
+from .file_use import read_file_input
 
 console = Console(highlight=False)
 

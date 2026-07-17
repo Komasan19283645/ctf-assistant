@@ -1,0 +1,14 @@
+pyproject.toml
+ctf/__init__.py
+ctf/ai_client.py
+ctf/config.py
+ctf/detectors.py
+ctf/file_use.py
+ctf/main.py
+ctf/password_cracking.py
+ctf_assistant.egg-info/PKG-INFO
+ctf_assistant.egg-info/SOURCES.txt
+ctf_assistant.egg-info/dependency_links.txt
+ctf_assistant.egg-info/entry_points.txt
+ctf_assistant.egg-info/requires.txt
+ctf_assistant.egg-info/top_level.txt

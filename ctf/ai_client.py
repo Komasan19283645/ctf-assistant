@@ -1,5 +1,5 @@
 import requests
-from config import (
+from .config import (
     LMSTUDIO_BASE_URL, LMSTUDIO_MODEL,
     OPENROUTER_BASE_URL, OPENROUTER_MODEL, OPENROUTER_API_KEY, SYSTEM_PROMPT
 )
