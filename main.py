@@ -2,16 +2,18 @@ import argparse
 import sys
 from pathlib import Path
 
+from rich.console import Console
+from rich.rule import Rule
+
 from detectors import detect_base64, detect_binary, detect_caesar, detect_hex, identify_hash
 from password_cracking import PasswordCracker
 from config import WORDLIST_PATH
 from ai_client import analyze_challenge
 from file_use import read_file_input
 
-STARTUP_MESSAGE = "CTF Assistant started."
-EXIT_HINT       = "Type 'exit' to quit. Type 'ai' for challenge analysis."
-SEPARATOR       = "-" * 40
-EXIT_MESSAGE    = "Closing the assistant..."
+console = Console(highlight=False)
+
+EXIT_MESSAGE = "Bye."
 
 
 def parse_args() -> argparse.Namespace:
@@ -24,12 +26,11 @@ def safe_input(prompt: str) -> str | None:
     try:
         return input(prompt)
     except EOFError:
-        print("\n" + EXIT_MESSAGE)
+        console.print(f"\n[dim]{EXIT_MESSAGE}[/dim]")
         return None
 
 
 def analyze_text(text: str) -> str:
-    # Order matters: most specific first, most general last
     checks = [
         detect_caesar,
         detect_binary,
@@ -40,14 +41,14 @@ def analyze_text(text: str) -> str:
     for detect in checks:
         result = detect(text)
         if result.matched:
-            details = f" and {result.details}" if result.details else ""
-            return f"[Result] {result.label}{details}."
+            details = f" · {result.details}" if result.details else ""
+            return f"{result.label}{details}"
 
-    return "[Result] Unknown format."
+    return "Unknown format"
 
 
 def prompt_wordlist(cracker: PasswordCracker) -> bool:
-    raw = safe_input("Wordlist path [Default]: ")
+    raw = safe_input("  wordlist path [default]: ")
     if raw is None:
         return False
 
@@ -55,27 +56,27 @@ def prompt_wordlist(cracker: PasswordCracker) -> bool:
     path = Path(path_str)
 
     if not path.is_file():
-        print("[Wordlist] File not found.")
+        console.print("[red]  error[/red]  file not found")
         return False
 
     cracker.set_wordlist(path)
-    print(f"[Wordlist] Loaded: {path}")
+    console.print(f"[dim]  loaded  {path}[/dim]")
     return True
 
 
 def ensure_wordlist(cracker: PasswordCracker) -> bool:
     if cracker.wordlist_path is not None:
         return True
-    print("[Crack] No wordlist loaded. Set one now.")
+    console.print("[dim]  no wordlist set[/dim]")
     return prompt_wordlist(cracker)
 
 
 def execute_crack(cracker: PasswordCracker, target_hash: str, algorithm: str) -> None:
     result = cracker.crack_hash(target_hash, algorithm)
     if result.matched:
-        print(f"[Crack] Match found: {result.password} ({result.label})")
+        console.print(f"[green]  found[/green]   {result.password}  [dim]({result.label})[/dim]")
     else:
-        print(f"[Crack] {result.details or 'No match found.'}")
+        console.print(f"[dim]  {result.details or 'no match found'}[/dim]")
 
 
 def handle_hash(cracker: PasswordCracker, text: str) -> bool:
@@ -83,9 +84,9 @@ def handle_hash(cracker: PasswordCracker, text: str) -> bool:
     if not hash_result.matched:
         return False
 
-    print(f"[Result] {hash_result.label}.")
+    console.print(f"[cyan]  hash[/cyan]    {hash_result.label}")
 
-    raw = safe_input("Crack it now? (y/n): ")
+    raw = safe_input("  crack? (y/n): ")
     if raw is None or raw.strip().lower() not in {"y", "yes", "s", "si"}:
         return True
 
@@ -97,10 +98,10 @@ def handle_hash(cracker: PasswordCracker, text: str) -> bool:
 
 
 def handle_ai() -> None:
-    print("[AI] Enter challenge description (Type 'END' on a new line to submit):")
+    console.print("[dim]  paste challenge · type END to submit[/dim]")
     lines = []
     while True:
-        line = safe_input("> ")
+        line = safe_input("  > ")
         if line is None:
             return
         if line.strip() == "END":
@@ -109,20 +110,23 @@ def handle_ai() -> None:
 
     description = "\n".join(lines).strip()
     if not description:
-        print("[AI] Empty description, aborting.")
+        console.print("[dim]  empty, aborting[/dim]")
         return
 
-    backend = safe_input("Backend (local/cloud) [local]: ")
+    backend = safe_input("  backend (local/cloud) [local]: ")
     if backend is None:
         return
     backend = backend.strip().lower() or "local"
 
-    print(f"[AI] Analyzing with {backend} model...")
+    console.print(f"[dim]  querying {backend}...[/dim]")
     try:
         response = analyze_challenge(description, backend)
-        print("\n--- AI Analysis ---\n" + response + "\n-------------------")
+        console.print()
+        console.rule("[dim]ai analysis[/dim]", style="dim")
+        console.print(response)
+        console.rule(style="dim")
     except Exception as e:
-        print(f"[AI Error] Failed to reach API: {e}")
+        console.print(f"[red]  error[/red]   {e}")
 
 
 def main() -> None:
@@ -131,40 +135,41 @@ def main() -> None:
     if args.file:
         result = read_file_input(args.file)
         if not result.success:
-            print(f"Error: {result.error}", file=sys.stderr)
+            console.print(f"[red]error[/red]  {result.error}", file=sys.stderr)
             sys.exit(1)
 
-        print(analyze_text(result.content))
+        label = analyze_text(result.content)
+        console.print(f"[cyan]result[/cyan]  {label}")
         return
 
-    print(STARTUP_MESSAGE)
-    print(EXIT_HINT + "\n")
+    console.print("[bold cyan]ctf-assistant[/bold cyan]  [dim]exit · ai[/dim]")
+    console.rule(style="dim")
 
     cracker = PasswordCracker()
 
     while True:
-        raw = safe_input("Enter text to analyze (or 'exit' / 'ai'): ")
+        raw = safe_input("\n> ")
         if raw is None:
             break
 
         text = raw.strip()
 
         if text.lower() == "exit":
-            print(EXIT_MESSAGE)
+            console.print(f"[dim]{EXIT_MESSAGE}[/dim]")
             break
 
         if text.lower() == "ai":
             handle_ai()
-            print(SEPARATOR)
             continue
 
         if not text:
             continue
 
         if not handle_hash(cracker, text):
-            print(analyze_text(text))
+            label = analyze_text(text)
+            console.print(f"[cyan]result[/cyan]  {label}")
 
-        print(SEPARATOR)
+        console.rule(style="dim")
 
 
 if __name__ == "__main__":
