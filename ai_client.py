@@ -10,11 +10,13 @@ def call_api(base_url: str, model: str, messages: list, api_key: str = "") -> st
     headers = {"Content-Type": "application/json"}
     if api_key:
         headers["Authorization"] = f"Bearer {api_key}"
+        headers["HTTP-Referer"] = "http://localhost"
+        headers["X-Title"] = "ctf-assistant"
 
     payload = {
         "model": model,
         "messages": [{"role": "system", "content": SYSTEM_PROMPT}] + messages,
-        "max_tokens": None if model == "local-model" else 512,
+        "max_tokens": None if model == "local-model" else 2048,
         "temperature": 0 if model == "local-model" else 0.3,
     }
 
@@ -24,7 +26,10 @@ def call_api(base_url: str, model: str, messages: list, api_key: str = "") -> st
         json = payload,
         timeout = None if model == "local-model" else 120
     )
-    response.raise_for_status()
+    #response.raise_for_status()
+    if not response.ok:
+        print(response.json())  # muestra el error exacto
+        response.raise_for_status()
 
     """
     {

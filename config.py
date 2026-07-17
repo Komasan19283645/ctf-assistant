@@ -6,7 +6,7 @@ LMSTUDIO_BASE_URL  = "http://localhost:1234/v1"
 LMSTUDIO_MODEL     = "local-model"
 
 OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
-OPENROUTER_MODEL    = "meta-llama/llama-3.3-70b-instruct:free"
+OPENROUTER_MODEL    = "openrouter/auto"
 OPENROUTER_API_KEY  = os.environ.get("OPENROUTER_API_KEY", "")
 
 SYSTEM_PROMPT = """You are an elite CTF player and Exploit Developer. Your goal is to provide the exact technical solution, vulnerability analysis, and working exploit code.
