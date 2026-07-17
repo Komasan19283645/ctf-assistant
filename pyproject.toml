@@ -9,6 +9,7 @@ description = "CTF Assistant — encoding detection, hash cracking, AI integrati
 requires-python = ">=3.10"
 dependencies = [
     "requests",
+    "rich",
 ]
 
 [project.scripts]
