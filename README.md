@@ -128,11 +128,4 @@ python test_all.py
 - Add unit tests for any new detector or mutation behavior.
 
 ## License
-Add a `LICENSE` file to indicate the intended license (e.g., MIT, Apache-2.0). If none is present, clarify licensing before publishing.
-
----
-
-If you want, I can:
-- commit this `README.md` to the repository (I already created it),
-- run the test suite now, or
-- add a brief `CONTRIBUTING.md` and `LICENSE` template.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
